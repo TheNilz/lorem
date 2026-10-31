@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080e1a" />
+  <meta name="description" content="آزمایشگاه تعاملی جبر بول: گیت‌های AND، OR و NOT را با کیبورد کنترل کنید." />
+  <title>BOOL LAB</title>
+  <link rel="icon" type="image/png" href="./" sizes="16x16">
+
+  <style>
+        @font-face {
+      font-family: a;
+      src: url(./Lalezar-Regular.ttf);
+    }
+    :root {
+      --bg: #080d18; --surface: #10192b; --surface2: #141f35; --border: #273550;
+      --text: #f3f7ff; --muted: #96a7c2; --accent: #48edc9;
+      --accent-rgb: 72,237,201; --off: #596782; --bad: #ff7889;
+      color-scheme: dark;
+      font-family: a;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: var(--bg); overflow-x: hidden; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+    .background {
+      z-index: -1; position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 18% 8%, #152b42b2, transparent 35%),
+                  radial-gradient(circle at 91% 80%, #25204784, transparent 34%),
+                  linear-gradient(180deg,#080e1a 0%, #090d18 100%);
+    }
+    .background:after {
+      content: ''; position: absolute; inset: 0; opacity: .25;
+      background-image: linear-gradient(#47608026 1px,transparent 1px),linear-gradient(90deg,#47608026 1px,transparent 1px);
+      background-size: 42px 42px; mask-image: linear-gradient(to bottom,#000 0%,transparent 90%);
+    }
+    .wrap { width: min(1400px, calc(100% - 64px)); margin-inline: auto; }
+    main.wrap { padding-top:32px; }
+    .tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:19px; }
+    .tab { display:flex; flex-direction:column; align-items:flex-start; text-align:right; gap:6px; padding:17px 21px; background:#131e30bb; border:1px solid #2b3a52; border-radius:16px; color:#d9e5f5; transition:background .2s, border-color .2s, transform .2s, box-shadow .2s; position:relative; overflow:hidden; }
+    .tab:hover { transform:translateY(-2px); background:#1a273d; }
+    .tab[aria-selected="true"] { border-color:rgba(var(--accent-rgb),.8); background:linear-gradient(115deg,rgba(var(--accent-rgb),.13),#142036); box-shadow:0 0 0 1px rgba(var(--accent-rgb),.14), inset 0 0 30px rgba(var(--accent-rgb),.04); }
+    .tab[aria-selected="true"]:after { content:''; position:absolute; inset-inline:19px; bottom:0; height:3px; background:var(--accent); border-radius:10px 10px 0 0; box-shadow:0 0 17px var(--accent); }
+    .tab-top { display:flex; align-items:center; gap:11px; width:100%; }
+    .tab-index { font:600 11px ui-monospace,monospace; color:#8394b1; direction:ltr; }
+    .tab-name { font:900 24px ui-monospace,monospace; letter-spacing:.6px; direction:ltr; }
+    .tab-desc { font-size:12px; color:#a0b1ca; }
+    .tab[aria-selected="true"] .tab-name { color:var(--accent); }
+    .workspace { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(300px,.85fr); gap:18px; align-items:stretch; }
+    .panel { border:1px solid #2b3a53; background:linear-gradient(135deg,#121e30ee,#10192be8); border-radius:20px; box-shadow:0 14px 65px #00000024; min-width:0; }
+    .circuit-panel { display:flex; flex-direction:column; overflow:hidden; min-height:550px; }
+    .panel-header { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:24px 27px 18px; }
+    .panel-kicker { font:700 10px ui-monospace,monospace; color:var(--accent); letter-spacing:2px; direction:ltr; text-align:right; }
+    .panel-title { margin:7px 0 0; font-size:23px; font-weight:900; }
+    .output-badge { display:flex; align-items:center; gap:10px; background:#0b1424; border:1px solid #35465f; border-radius:13px; padding:11px 14px; direction:ltr; }
+    .output-badge small { color:#9baac3; font:600 10px ui-monospace,monospace; }
+    .output-badge strong { font:900 24px ui-monospace,monospace; color:var(--bad); }
+    .output-badge.on { border-color:rgba(var(--accent-rgb),.5); box-shadow:0 0 25px rgba(var(--accent-rgb),.08); }
+    .output-badge.on strong { color:var(--accent); }
+    .circuit-stage { margin:0 20px; flex:1; min-height:300px; background:linear-gradient(155deg,#0a1424,#101b30); border:1px solid #2b3b54; border-radius:17px; position:relative; overflow:hidden; display:flex; align-items:center; }
+    .circuit-stage:before { content:''; position:absolute; inset:0; background-image:radial-gradient(#42617d65 1px, transparent 1px); background-size:22px 22px; opacity:.4; }
+    #circuit { display:block; position:relative; width:100%; height:auto; max-height:400px; overflow:visible; direction:ltr; }
+    .wire { fill:none; stroke:#45546d; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; transition:stroke .2s,filter .2s; }
+    .wire.on { stroke:var(--accent); filter:drop-shadow(0 0 7px rgba(var(--accent-rgb),.7)); }
+    .wire.on.flow { stroke-dasharray:14 9; animation:dash 1.6s linear infinite; }
+    .connection { fill:#4d5c74; transition:fill .2s; }
+    .connection.on { fill:var(--accent); filter:drop-shadow(0 0 9px var(--accent)); }
+    .gate-shape { fill:#15253a; stroke:#778baa; stroke-width:5; stroke-linejoin:round; transition:fill .25s,stroke .25s,filter .25s; }
+    .gate-shape.on { fill:#133f40; stroke:var(--accent); filter:drop-shadow(0 0 18px rgba(var(--accent-rgb),.42)); }
+    .gate-letter { fill:#dce7f9; font-size:25px; font-weight:800; font-family:a; dominant-baseline:middle; text-anchor:middle; }
+    .input-node { fill:#182640; stroke:#5b6f8e; stroke-width:5; transition:stroke .2s,fill .2s,filter .2s; }
+    .input-node.on { fill:#1a5554; stroke:var(--accent); filter:drop-shadow(0 0 14px rgba(var(--accent-rgb),.45)); }
+    .input-name { text-anchor:middle; font:900 28px ui-monospace,monospace; fill:#f1f6ff; dominant-baseline:middle; }
+    .input-value { fill:#9aafcb; text-anchor:middle; font:800 21px ui-monospace,monospace; }
+    .input-value.on { fill:var(--accent); }
+    .out-ring { fill:#172238; stroke:#64738e; stroke-width:5; transition:stroke .25s,fill .25s,filter .25s; }
+    .out-ring.on { fill:#12493f; stroke:var(--accent); filter:drop-shadow(0 0 19px rgba(var(--accent-rgb),.6)); }
+    .out-legend { font:700 13px ui-monospace,monospace; text-anchor:middle; fill:#aebfd9; letter-spacing:1.4px; }
+    .out-value { font:900 48px ui-monospace,monospace; fill:var(--bad); text-anchor:middle; }
+    .out-value.on { fill:var(--accent); }
+    .component-txt { font:700 14px ui-monospace,monospace; fill:#647897; text-anchor:middle; letter-spacing:1px; }
+    .not-bubble { fill:#162337; stroke:#778baa; stroke-width:5; transition:stroke .25s,fill .25s; }
+    .not-bubble.on { stroke:var(--accent); fill:#194943; }
+    .circuit-caption { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:20px 25px 25px; }
+    .formula-card { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#091423; border-radius:10px; border:1px solid #293f54; }
+    .formula-caption { font-size:11px; color:#8398b8; }
+    .formula { direction:ltr; font:800 21px ui-monospace,monospace; color:var(--accent); letter-spacing:1px; }
+    .side { padding:23px; display:flex; flex-direction:column; gap:17px; }
+    .side-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .side-head h2 { font-size:18px; margin:0; }
+    .keycap { display:inline-grid; place-items:center; direction:ltr; min-width:31px; height:29px; padding:0 8px; border:1px solid #60718f; border-bottom-width:3px; border-radius:7px; color:#dde8f8; background:#26334b; font:800 13px ui-monospace,monospace; }
+    .input-buttons { display:grid; gap:11px; }
+    .switch-control { width:100%; padding:14px 16px; border-radius:13px; border:1px solid #344760; background:#16243a; color:var(--text); text-align:right; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:background .2s,border .2s,box-shadow .2s; }
+    .switch-control:hover { border-color:#728aa8; }
+    .switch-control[aria-pressed="true"] { border-color:rgba(var(--accent-rgb),.68); background:rgba(var(--accent-rgb),.075); box-shadow:inset 0 0 30px rgba(var(--accent-rgb),.035); }
+    .switch-info { display:flex; align-items:center; gap:12px; }
+    .switch-letter { font:900 23px ui-monospace,monospace; min-width:24px; }
+    .switch-detail { display:grid; gap:5px; }
+    .switch-detail strong { font-size:12px; }
+    .switch-detail span { color:#97aac6; font-size:11px; }
+    .switch-toggle { width:49px; height:27px; border-radius:99px; background:#3a4960; border:1px solid #65738a; position:relative; flex:none; transition:background .2s; }
+    .switch-toggle:before { content:''; position:absolute; left:4px; top:4px; width:17px; height:17px; background:#c3cfdf; border-radius:50%; transition:transform .2s,background .2s; }
+    .switch-control[aria-pressed="true"] .switch-toggle { background:var(--accent); border-color:var(--accent); box-shadow:0 0 16px rgba(var(--accent-rgb),.35); }
+    .switch-control[aria-pressed="true"] .switch-toggle:before { background:#072c2c; transform:translateX(22px); }
+    .output-result { border:1px solid #455269; border-radius:13px; padding:17px; background:#0d1929; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .result-label { display:flex; align-items:center; gap:8px; color:#b4c3d8; font-size:12px; }
+    .result-led { width:11px; height:11px; background:#ed6f83; box-shadow:0 0 13px #ed6f8370; border-radius:50%; }
+    .result-led.on { background:var(--accent); box-shadow:0 0 16px var(--accent); }
+    .result-bit { font:900 30px ui-monospace,monospace; color:#ed6f83; }
+    .result-bit.on { color:var(--accent); }
+    .scenario { padding:15px 16px; background:#111d31; border:1px solid #2f4057; border-radius:12px; }
+    .scenario-kicker { color:var(--accent); font-size:11px; font-weight:bold; margin-bottom:6px; }
+    .scenario p { font-size:12px; color:#b7c7dd; line-height:2; margin:0; }
+    .side-actions { display:flex; gap:8px; margin-top:auto; }
+    .action-button { flex:1; min-height:43px; border:1px solid #52647f; background:#23314a; border-radius:10px; color:#e7eefb; font-weight:700; font-size:12px; }
+    .action-button:hover { background:#2e405f; }
+    .action-button.primary { color:#052e2b; border-color:var(--accent); background:var(--accent); }
+    .action-button.primary:hover { filter:brightness(1.12); }
+    .lower { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap:18px; margin:18px 0 30px; }
+    .lower-panel { padding:23px 27px; }
+    .section-title { margin:0 0 17px; font-size:17px; font-weight:900; }
+    .truth-table { border-collapse:separate; border-spacing:0 6px; width:100%; direction:ltr; text-align:center; table-layout:fixed; font:700 14px ui-monospace,monospace; }
+    .truth-table thead { color:#92a8c6; font-size:11px; }
+    .truth-table th { padding:10px 8px; }
+    .truth-table td { padding:12px 8px; background:#19253a; color:#b4c5dc; transition: background .2s,color .2s; }
+    .truth-table tbody tr td:first-child { border-radius:9px 0 0 9px; }
+    .truth-table tbody tr td:last-child { border-radius:0 9px 9px 0; }
+    .truth-table tr.current td { background:rgba(var(--accent-rgb),.15); color:#f4fcff; outline:1px solid rgba(var(--accent-rgb),.2); outline-offset:-1px; }
+    .truth-table tr.current td:last-child { color:var(--accent); font-weight:900; }
+    .rule-summary { display:flex; flex-direction:column; gap:13px; }
+    .rule-head { color:var(--accent); font:900 24px ui-monospace,monospace; direction:ltr; text-align:right; }
+    .rule-content { margin:0; color:#afc0d8; font-size:13px; line-height:2.2; }
+    .kbd-help { border-top:1px solid #2e4058; padding-top:13px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:#96aac5; font-size:11px; }
+    @keyframes dash { to { stroke-dashoffset:-46; } }
+    @media (max-width:1020px) { .workspace { grid-template-columns:1fr; } .side { display:grid; grid-template-columns:1fr 1fr; align-items:start; } .side-head,.side-actions { grid-column:1/-1; } .circuit-panel { min-height:490px; } }
+    @media (max-width:700px) { .wrap { width:calc(100% - 30px); } main.wrap { padding-top:18px; } .tabs { gap:7px; } .tab { padding:12px; border-radius:12px; } .tab-top { gap:5px; } .tab-name { font-size:19px; } .tab-index { font-size:9px; } .tab-desc { font-size:10px; } .panel-header { padding:18px 15px 12px; } .panel-title { font-size:19px; } .output-badge { padding:7px 9px; } .output-badge strong { font-size:20px; } .circuit-panel { min-height:auto; } .circuit-stage { min-height:210px; margin:0 9px; } #circuit { min-height:210px; } .circuit-caption { padding:15px; } .formula { font-size:17px; } .side { padding:15px; grid-template-columns:1fr; gap:13px; } .side-head,.side-actions { grid-column:auto; } .lower { grid-template-columns:1fr; gap:12px; margin-top:12px; } .lower-panel { padding:19px; } .rule-head { font-size:21px; } }
+    @media (prefers-reduced-motion:reduce) { *,*:before,*:after { animation-duration:.001ms!important; transition-duration:.001ms!important; } }
+  </style>
+</head>
+<body>
+  <div class="background" aria-hidden="true"></div>
+  <main class="wrap">
+    <nav class="tabs" role="tablist" aria-label="انتخاب گیت منطقی">
+      <button class="tab" type="button" role="tab" id="tab-and" aria-controls="gate-panel" aria-selected="true" data-gate="and">
+        <div class="tab-top"><span class="tab-index">01 /</span><span class="tab-name">AND</span></div><span class="tab-desc">هر دو شرط درست باشند</span>
+      </button>
+      <button class="tab" type="button" role="tab" id="tab-or" aria-controls="gate-panel" aria-selected="false" data-gate="or">
+        <div class="tab-top"><span class="tab-index">02 /</span><span class="tab-name">OR</span></div><span class="tab-desc">حداقل یک شرط درست باشد</span>
+      </button>
+      <button class="tab" type="button" role="tab" id="tab-not" aria-controls="gate-panel" aria-selected="false" data-gate="not">
+        <div class="tab-top"><span class="tab-index">03 /</span><span class="tab-name">NOT</span></div><span class="tab-desc">نتیجه را برعکس کن</span>
+      </button>
+    </nav>
+    <div class="workspace">
+      <section class="panel circuit-panel" id="gate-panel" role="tabpanel" aria-labelledby="tab-and">
+        <div class="panel-header">
+          <div><div class="panel-kicker">LIVE / LOGIC CIRCUIT</div><h2 class="panel-title" id="gateHeading">گیت AND <span style="font-weight:400;color:#8da1be;font-size:13px">— عملگر «و»</span></h2></div>
+          <div class="output-badge" id="outputBadge"><small>OUTPUT</small><strong id="badgeValue">0</strong></div>
+        </div>
+        <div class="circuit-stage">
+          <svg id="circuit" viewBox="0 0 1100 530" role="img" aria-label="مدار منطقی تعاملی که ورودی‌ها و خروجی را نمایش می‌دهد" xmlns="http://www.w3.org/2000/svg">
+            <text class="component-txt" x="165" y="67">INPUTS</text><text class="component-txt" x="940" y="67">OUTPUT</text>
+            <g id="two-inputs">
+              <path id="wireA" class="wire" d="M212 190 H393 V211 H500"/>
+              <path id="wireB" class="wire" d="M212 352 H393 V332 H500"/>
+              <circle id="startA" class="connection" cx="212" cy="190" r="7"/>
+              <circle id="startB" class="connection" cx="212" cy="352" r="7"/>
+              <circle id="inputA" class="input-node" cx="165" cy="190" r="46"/>
+              <text class="input-name" x="165" y="192">A</text>
+              <text id="svgValueA" class="input-value" x="165" y="259">0</text>
+              <circle id="inputB" class="input-node" cx="165" cy="352" r="46"/>
+              <text class="input-name" x="165" y="354">B</text>
+              <text id="svgValueB" class="input-value" x="165" y="421">0</text>
+            </g>
+            <g id="single-input" style="display:none">
+              <path id="wireNotA" class="wire" d="M212 272 H515" />
+              <circle id="startNotA" class="connection" cx="212" cy="272" r="7"/>
+              <circle id="inputNotA" class="input-node" cx="165" cy="272" r="46"/>
+              <text class="input-name" x="165" y="274">A</text>
+              <text id="svgValueNotA" class="input-value" x="165" y="343">0</text>
+            </g>
+            <g id="shape-and">
+              <path id="shapeAnd" class="gate-shape" d="M500 153 H576 A119 119 0 0 1 576 391 H500 Z"/>
+              <text class="gate-letter" x="578" y="275">AND</text>
+            </g>
+            <g id="shape-or" style="display:none">
+              <path id="shapeOr" class="gate-shape" d="M500 153 Q562 272 500 391 Q618 401 708 272 Q618 144 500 153 Z"/>
+              <text class="gate-letter" x="605" y="275">OR</text>
+            </g>
+            <g id="shape-not" style="display:none">
+              <path id="shapeNot" class="gate-shape" d="M515 178 L515 366 L678 272 Z"/>
+              <circle id="notBubble" class="not-bubble" cx="694" cy="272" r="16"/>
+              <text class="gate-letter" x="575" y="276">NOT</text>
+            </g>
+            <path id="wireOut" class="wire" d="M695 272 H880"/>
+            <circle id="startOut" class="connection" cx="880" cy="272" r="7"/>
+            <circle id="outputNode" class="out-ring" cx="940" cy="272" r="62"/>
+            <text class="out-legend" x="940" y="250">F</text>
+            <text id="svgOutput" class="out-value" x="940" y="307">0</text>
+            <text class="component-txt" x="600" y="451" id="gateEnglish">AND GATE</text>
+            <text class="component-txt" x="940" y="380" id="outputEnglish">FALSE</text>
+          </svg>
+        </div>
+        <div class="circuit-caption">
+          <div class="formula-card"><span class="formula-caption">رابطهٔ منطقی</span><span id="formula" class="formula">0 · 0 = 0</span></div>
+        </div>
+      </section>
+      <aside class="panel side" aria-label="کنترل‌های مدار">
+        <div class="side-head"><h2>کنترل ورودی‌ها</h2><span style="font-size:11px;color:#849ab8">CLICK OR KEYBOARD</span></div>
+        <div class="input-buttons">
+          <button class="switch-control" id="controlA" type="button" aria-label="تغییر مقدار ورودی A" aria-pressed="false">
+            <span class="switch-info"><span class="switch-letter">A</span><span class="switch-detail"><strong>ورودی اول</strong><span id="statusA">خاموش • صفر</span></span><span class="keycap">A</span></span>
+            <span class="switch-toggle" aria-hidden="true"></span>
+          </button>
+          <button class="switch-control" id="controlB" type="button" aria-label="تغییر مقدار ورودی B" aria-pressed="false">
+            <span class="switch-info"><span class="switch-letter">B</span><span class="switch-detail"><strong>ورودی دوم</strong><span id="statusB">خاموش • صفر</span></span><span class="keycap">B</span></span>
+            <span class="switch-toggle" aria-hidden="true"></span>
+          </button>
+        </div>
+        <div class="output-result" aria-live="polite" aria-atomic="true">
+          <div class="result-label"><span id="resultLed" class="result-led"></span><span>خروجی نهایی مدار</span></div>
+          <div id="resultValue" class="result-bit">0</div>
+        </div>
+        <div class="scenario"><div class="scenario-kicker">مثال واقعی</div><p id="scenarioText">برای ورود، هم کارت معتبر و هم رمز صحیح لازم است. فعلاً هیچ‌کدام فعال نیستند؛ ورود مجاز نیست.</p></div>
+        <div class="side-actions">
+          <button id="autoButton" class="action-button primary" type="button">▶ دمو خودکار</button>
+          <button id="resetButton" class="action-button" type="button">↺ بازنشانی</button>
+        </div>
+      </aside>
+    </div>
+    <div class="lower">
+      <section class="panel lower-panel" aria-labelledby="truth-title">
+        <h2 class="section-title" id="truth-title">جدول درستی <span style="font-size:12px;color:#899db7;font-weight:400">— ردیف فعال مشخص می‌شود</span></h2>
+        <table class="truth-table" id="truthTable" aria-label="جدول درستی گیت"></table>
+      </section>
+      <section class="panel lower-panel" aria-labelledby="rule-title">
+        <h2 class="section-title" id="rule-title">قانون پشت این مدار</h2>
+        <div class="rule-summary">
+          <div class="rule-head" id="ruleFormula">A · B</div>
+          <p class="rule-content" id="ruleText">گیت AND تنها زمانی خروجی ۱ می‌دهد که هر دو ورودی ۱ باشند. اگر حتی یکی از ورودی‌ها صفر باشد، خروجی صفر می‌شود.</p>
+          <div class="kbd-help"><span>میانبرهای کیبورد:</span><span class="keycap">A</span><span class="keycap">B</span><span>برای تغییر ورودی</span><span class="keycap">←</span><span class="keycap">→</span><span>تغییر صفحه</span></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const config = {
+        and: { label: 'AND', subtitle: 'عملگر «و»', expr:'A · B', rule:'گیت AND تنها زمانی خروجی ۱ می‌دهد که هر دو ورودی ۱ باشند. اگر حتی یکی از ورودی‌ها صفر باشد، خروجی صفر می‌شود.', accent:'#48edc9', rgb:'72,237,201', formula:(a,b,f)=>`${a} · ${b} = ${f}`, fn:(a,b)=> a && b ? 1 : 0, scenario:(a,b,f)=>f?'کارت معتبر است و رمز هم درست وارد شده؛ در باز می‌شود.':`کارت ${a?'معتبر':'نامعتبر'} است و رمز ${b?'درست':'نادرست'} است؛ برای باز شدن در، هر دو باید درست باشند.` },
+        or: { label:'OR', subtitle:'عملگر «یا»', expr:'A + B', rule:'گیت OR اگر حداقل یکی از ورودی‌ها ۱ باشد، خروجی ۱ می‌دهد. فقط وقتی هر دو صفر باشند، خروجی صفر است. اگر هر دو ۱ باشند هم خروجی ۱ خواهد بود.', accent:'#b394ff', rgb:'179,148,255', formula:(a,b,f)=>`${a} + ${b} = ${f}`, fn:(a,b)=> a || b ? 1 : 0, scenario:(a,b,f)=>f?'دست‌کم یکی از حسگرهای دود یا حرارت هشدار داده است؛ آژیر فعال می‌شود.':'نه حسگر دود و نه حسگر حرارت فعال نیست؛ آژیر خاموش است.' },
+        not: { label:'NOT', subtitle:'عملگر «نقیض»', expr:'¬A', rule:'گیت NOT فقط یک ورودی دارد و مقدار آن را معکوس می‌کند: وقتی A صفر باشد خروجی ۱، و وقتی A یک باشد خروجی ۰ است. دایره کوچک نوک گیت نشانه وارونگی است.', accent:'#ffb86a', rgb:'255,184,106', formula:(a,b,f)=>`¬${a} = ${f}`, fn:(a)=> a ? 0 : 1, scenario:(a,f)=>a?'سنسور می‌گوید اتاق روشن است؛ فرمان «چراغ را روشن کن» خاموش می‌شود.':'سنسور می‌گوید اتاق تاریک است؛ فرمان «چراغ را روشن کن» فعال می‌شود.' }
+      };
+      let current = 'and';
+      let A = 0;
+      let B = 0;
+      let autoTimer = null;
+      let autoIndex = -1;
+      let latchedA = 0;
+      let latchedB = 0;
+      const heldKeys = new Set();
+      const syncInputs = () => { A = heldKeys.has('KeyA') ? 1 : latchedA; B = heldKeys.has('KeyB') ? 1 : latchedB; };
+      const el = id => document.getElementById(id);
+      const setOn = (id,value,animation=false) => {const node=el(id);node.classList.toggle('on',Boolean(value));if(animation)node.classList.toggle('flow',Boolean(value));};
+      const truthRows = gate => gate === 'not' ? [[0,1],[1,0]] : [[0,0,config[gate].fn(0,0)],[0,1,config[gate].fn(0,1)],[1,0,config[gate].fn(1,0)],[1,1,config[gate].fn(1,1)]];
+      function renderTruth(f) {
+        const single = current === 'not';
+        const columns=single?['A','¬A']:['A','B','F'];
+        el('truthTable').innerHTML=`<thead><tr>${columns.map(x=>`<th scope="col">${x}</th>`).join('')}</tr></thead><tbody>${truthRows(current).map((r)=>{
+          const active=single ? r[0]===A : r[0]===A && r[1]===B;
+          return `<tr class="${active?'current':''}" ${active?'aria-current="true"':''}>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+        }).join('')}</tbody>`;
+      }
+      function render() {
+        const g = config[current];
+        const f = g.fn(A,B);
+        document.documentElement.style.setProperty('--accent',g.accent);
+        document.documentElement.style.setProperty('--accent-rgb',g.rgb);
+        el('gateHeading').innerHTML=`گیت ${g.label} <span style="font-weight:400;color:#8da1be;font-size:13px">— ${g.subtitle}</span>`;
+        el('gate-panel').setAttribute('aria-labelledby',`tab-${current}`);
+        el('controlA').setAttribute('aria-pressed',String(!!A));
+        el('controlB').setAttribute('aria-pressed',String(!!B));
+        el('statusA').textContent=A?'روشن • یک':'خاموش • صفر';
+        el('statusB').textContent=B?'روشن • یک':'خاموش • صفر';
+        el('controlB').hidden=current==='not';
+        el('controlB').style.display=current==='not'?'none':'';
+        el('two-inputs').style.display=current==='not'?'none':'';
+        el('single-input').style.display=current==='not'?'':'none';
+        ['and','or','not'].forEach(key=>{
+          el(`shape-${key}`).style.display=current===key?'':'none';
+          el(`tab-${key}`).setAttribute('aria-selected',String(current===key));
+        });
+        const startX=current==='or'?525:500;
+        el('wireA').setAttribute('d',`M212 190 H393 V211 H${startX}`);
+        el('wireB').setAttribute('d',`M212 352 H393 V332 H${startX}`);
+        el('wireOut').setAttribute('d',`M${current==='and'?695:current==='or'?708:710} 272 H880`);
+        setOn('wireA',A,true);setOn('wireB',B,true);setOn('wireNotA',A,true);
+        ['inputA','inputNotA','startA','startNotA','svgValueA','svgValueNotA'].forEach(id=>setOn(id,A));
+        ['inputB','startB','svgValueB'].forEach(id=>setOn(id,B));
+        setOn('wireOut',f,true);setOn('startOut',f);setOn('outputNode',f);setOn('svgOutput',f);
+        setOn('shapeAnd',f);setOn('shapeOr',f);setOn('shapeNot',f);setOn('notBubble',f);
+        setOn('outputBadge',f);setOn('resultLed',f);setOn('resultValue',f);
+        el('svgValueA').textContent=el('svgValueNotA').textContent=String(A);
+        el('svgValueB').textContent=String(B);
+        el('svgOutput').textContent=el('badgeValue').textContent=el('resultValue').textContent=String(f);
+        el('outputEnglish').textContent=f?'TRUE':'FALSE';
+        el('gateEnglish').textContent=g.label+' GATE';
+        el('formula').textContent=g.formula(A,B,f);
+        el('ruleFormula').textContent=g.expr;
+        el('ruleText').textContent=g.rule;
+        el('scenarioText').textContent=current==='not'?g.scenario(A,f):g.scenario(A,B,f);
+        renderTruth(f);
+      }
+      function stopAuto(){if(autoTimer!==null){clearInterval(autoTimer);autoTimer=null;latchedA=A;latchedB=B;}el('autoButton').textContent='▶ دمو خودکار';el('autoButton').setAttribute('aria-pressed','false');}
+      function setGate(g,updateUrl=true){
+        if(!config[g])return;
+        stopAuto();current=g;
+        if(updateUrl && window.location.hash!==`#${g}`){history.pushState({gate:g},'',`#${g}`);}
+        render();
+      }
+      function toggle(which){stopAuto();if(which==='A')latchedA=1-latchedA;else if(which==='B' && current!=='not')latchedB=1-latchedB;syncInputs();render();}
+      document.querySelectorAll('[data-gate]').forEach(btn=>btn.addEventListener('click',()=>setGate(btn.dataset.gate)));
+      el('controlA').addEventListener('click',()=>toggle('A'));
+      el('controlB').addEventListener('click',()=>toggle('B'));
+      el('resetButton').addEventListener('click',()=>{stopAuto();latchedA=0;latchedB=0;syncInputs();render();});
+      el('autoButton').addEventListener('click',()=>{
+        if(autoTimer!==null){stopAuto();return;}
+        autoIndex=-1;
+        el('autoButton').textContent='■ توقف دمو';
+        el('autoButton').setAttribute('aria-pressed','true');
+        const step=()=>{
+          autoIndex++;
+          if(current==='not'){A=autoIndex%2;}
+          else {const combos=[[0,0],[0,1],[1,0],[1,1]];[A,B]=combos[autoIndex%4];}
+          render();
+        };
+        step();autoTimer=setInterval(step,1600);
+      });
+      document.addEventListener('keydown',event=>{
+        if(event.altKey||event.ctrlKey||event.metaKey||event.repeat)return;
+        if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||document.activeElement?.isContentEditable)return;
+        const code=event.code;
+        if(code==='KeyA'||(code==='KeyB' && current!=='not')){event.preventDefault();stopAuto();heldKeys.add(code);syncInputs();render();}
+        else if(code==='KeyR'){event.preventDefault();stopAuto();latchedA=0;latchedB=0;syncInputs();render();}
+        else if(code==='ArrowLeft'||code==='ArrowRight'){
+          event.preventDefault();const pages=['and','or','not'];const dir=code==='ArrowLeft'?1:-1;setGate(pages[(pages.indexOf(current)+dir+3)%3]);
+        }
+      });
+      document.addEventListener('keyup',event=>{
+        if(!heldKeys.has(event.code))return;
+        heldKeys.delete(event.code);
+        if(autoTimer===null){syncInputs();render();}
+      });
+      window.addEventListener('blur',()=>{
+        if(!heldKeys.size)return;
+        heldKeys.clear();
+        if(autoTimer===null){syncInputs();render();}
+      });
+      function syncHash(){const value=location.hash.replace('#','').toLowerCase();if(config[value]&&value!==current)setGate(value,false);}
+      window.addEventListener('popstate',syncHash);window.addEventListener('hashchange',syncHash);
+      const fromHash=location.hash.replace('#','').toLowerCase();
+      if(config[fromHash])current=fromHash;
+      render();
+    })();
+  </script>
+</body>
+</html>
